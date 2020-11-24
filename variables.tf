@@ -530,3 +530,7 @@ variable "docker_pip_cache" {
   type        = any
   default     = null
 }
+
+########
+variable "input_source_code_hash" {
+}

@@ -27,7 +27,8 @@ resource "aws_lambda_function" "this" {
   kms_key_arn                    = var.kms_key_arn
 
   filename         = local.filename
-  source_code_hash = (local.filename == null ? false : fileexists(local.filename)) && ! local.was_missing ? filebase64sha256(local.filename) : null
+  # source_code_hash = (local.filename == null ? false : fileexists(local.filename)) && ! local.was_missing ? filebase64sha256(local.filename) : null
+  source_code_hash = var.input_source_code_hash
 
   s3_bucket         = local.s3_bucket
   s3_key            = local.s3_key
