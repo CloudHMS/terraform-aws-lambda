@@ -1,6 +1,7 @@
-# AWS Lambda with EFS example
+# AWS Lambda with EFS Example
 
 Configuration in this directory creates AWS Lambda Function deployed with Elastic File System (EFS) attached.
+
 
 ## Usage
 
@@ -20,14 +21,14 @@ Note that this example may create resources which cost money. Run `terraform des
 | Name | Version |
 |------|---------|
 | terraform | >= 0.12.6 |
-| aws | >= 2.67 |
+| aws | >= 3.19 |
 | random | >= 2 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| aws | >= 2.67 |
+| aws | >= 3.19 |
 | random | >= 2 |
 
 ## Inputs

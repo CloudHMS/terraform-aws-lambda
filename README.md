@@ -10,8 +10,6 @@ These types of resources supported:
 * [Lambda Provisioned Concurrency](https://www.terraform.io/docs/providers/aws/r/lambda_provisioned_concurrency_config.html)
 * [Lambda Async Event Configuration](https://www.terraform.io/docs/providers/aws/r/lambda_function_event_invoke_config.html)
 * [Lambda Permission](https://www.terraform.io/docs/providers/aws/r/lambda_permission.html)
-
-Not supported, yet:
 * [Lambda Event Source Mapping](https://www.terraform.io/docs/providers/aws/r/lambda_event_source_mapping.html)
 
 
@@ -28,13 +26,13 @@ This Terraform module is the part of [serverless.tf framework](https://github.co
 
 - [x] Build dependencies for your Lambda Function and Layer.
 - [x] Support builds locally and in Docker (with or without SSH agent support for private builds).
-- [x] Create deployment package or deploy existing (previously built package) from local, from S3, from URL.
+- [x] Create deployment package or deploy existing (previously built package) from local, from S3, from URL, or from AWS ECR repository.
 - [x] Store deployment packages locally or in the S3 bucket.
 - [x] Support almost all features of Lambda resources (function, layer, alias, etc.)
 - [x] Lambda@Edge
 - [x] Conditional creation for many types of resources.
 - [x] Control execution of nearly any step in the process - build, package, store package, deploy, update.
-- [x] Control nearly all aspects of Lambda resources (provisioned concurrency, VPC, EFS, dead-letter notification, tracing, async events, IAM role, IAM policies, and more).
+- [x] Control nearly all aspects of Lambda resources (provisioned concurrency, VPC, EFS, dead-letter notification, tracing, async events, event source mapping, IAM role, IAM policies, and more).
 - [x] Support integration with other `serverless.tf` modules like [HTTP API Gateway](https://github.com/terraform-aws-modules/terraform-aws-apigateway-v2) (see [examples there](https://github.com/terraform-aws-modules/terraform-aws-apigateway-v2/tree/master/examples/complete-http)).
 
 
@@ -153,6 +151,22 @@ module "lambda_function_existing_package_s3" {
 }
 ```
 
+### Lambda Functions from Container Image stored on AWS ECR
+
+```hcl
+module "lambda_function_container_image" {
+  source = "terraform-aws-modules/lambda/aws"
+
+  function_name = "my-lambda-existing-package-local"
+  description   = "My awesome lambda function"
+
+  create_package = false
+  
+  image_uri    = "132367819851.dkr.ecr.eu-west-1.amazonaws.com/complete-cow:1.0"
+  package_type = "Image"
+}
+```
+
 ### Lambda Layers (store packages locally and on S3)
 
 ```hcl
@@ -261,8 +275,8 @@ module "lambda_function" {
 
   allowed_triggers = {
     APIGatewayAny = {
-      service = "apigateway"
-      arn     = "arn:aws:execute-api:eu-west-1:135367859851:aqnku8akd0"
+      service    = "apigateway"
+      source_arn = "arn:aws:execute-api:eu-west-1:135367859851:aqnku8akd0/*/*/*"
     },
     APIGatewayDevPost = {
       service    = "apigateway"
@@ -275,8 +289,6 @@ module "lambda_function" {
   }
 }
 ```
-
-Note: `service = "apigateway" with arn` is a short form to allow invocations of a Lambda Function from any stage, any method, any resource of an API Gateway.
 
 ## Conditional creation
 
@@ -335,7 +347,7 @@ terraform apply
 
 ## <a name="build"></a> Build Dependencies
 
-You can specify `source_path` in a variety of ways to achieve desired flexibility when building deployment packages locally or in Docker. You can use absolute or relative paths.
+You can specify `source_path` in a variety of ways to achieve desired flexibility when building deployment packages locally or in Docker. You can use absolute or relative paths.  If you have placed terraform files in subdirectories, note that relative paths are specified from the directory where `terraform plan` is run and not the location of your terraform file. 
 
 Note that, when building locally, files are not copying anywhere from the source directories when making packages, we use fast Python regular expressions to find matching files and directories, which makes packaging very fast and easy to understand.
 
@@ -543,13 +555,15 @@ Q4: What does this error mean - `"We currently do not support adding policies fo
 ## Examples
 
 * [Complete](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/complete) - Create Lambda resources in various combinations with all supported features.
+* [Container Image](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/container-image) - Create Docker image (using [docker provider](https://registry.terraform.io/providers/kreuzwerker/docker)), push it to AWS ECR, and create Lambda function from it.
 * [Build and Package](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/build-package) - Build and create deployment packages in various ways.
 * [Alias](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/alias) - Create static and dynamic aliases in various ways.
 * [Deploy](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/deploy) - Complete end-to-end build/update/deploy process using AWS CodeDeploy.
-* [Async Invocations](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/async) - Create Lambda Function with async event configuration (with SQS and SNS integration).
+* [Async Invocations](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/async) - Create Lambda Function with async event configuration (with SQS, SNS, and EventBridge integration).
 * [With VPC](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/with-vpc) - Create Lambda Function with VPC.
 * [With EFS](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/with-efs) - Create Lambda Function with Elastic File System attached (Terraform 0.13+ is recommended).
 * [Multiple regions](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/multiple-regions) - Create the same Lambda Function in multiple regions with non-conflicting IAM roles and policies.
+* [Event Source Mapping](https://github.com/terraform-aws-modules/terraform-aws-lambda/tree/master/examples/event-source-mapping) - Create Lambda Function with event source mapping configuration (SQS, DynamoDB, and Kinesis).
 
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
@@ -558,7 +572,7 @@ Q4: What does this error mean - `"We currently do not support adding policies fo
 | Name | Version |
 |------|---------|
 | terraform | >= 0.12.6 |
-| aws | >= 2.67 |
+| aws | >= 3.19 |
 | external | >= 1 |
 | local | >= 1 |
 | null | >= 2 |
@@ -568,7 +582,7 @@ Q4: What does this error mean - `"We currently do not support adding policies fo
 
 | Name | Version |
 |------|---------|
-| aws | >= 2.67 |
+| aws | >= 3.19 |
 | external | >= 1 |
 | local | >= 1 |
 | null | >= 2 |
@@ -614,23 +628,29 @@ Q4: What does this error mean - `"We currently do not support adding policies fo
 | docker\_pip\_cache | Whether to mount a shared pip cache folder into docker environment or not | `any` | `null` | no |
 | docker\_with\_ssh\_agent | Whether to pass SSH\_AUTH\_SOCK into docker environment or not | `bool` | `false` | no |
 | environment\_variables | A map that defines environment variables for the Lambda Function. | `map(string)` | `{}` | no |
+| event\_source\_mapping | Map of event source mapping | `any` | `{}` | no |
 | file\_system\_arn | The Amazon Resource Name (ARN) of the Amazon EFS Access Point that provides access to the file system. | `string` | `null` | no |
 | file\_system\_local\_mount\_path | The path where the function can access the file system, starting with /mnt/. | `string` | `null` | no |
 | function\_name | A unique name for your Lambda Function | `string` | `""` | no |
 | handler | Lambda Function entrypoint in your code | `string` | `""` | no |
 | hash\_extra | The string to add into hashing function. Useful when building same source path for different functions. | `string` | `""` | no |
+| image\_config\_command | The CMD for the docker image | `list(string)` | `[]` | no |
+| image\_config\_entry\_point | The ENTRYPOINT for the docker image | `list(string)` | `[]` | no |
+| image\_config\_working\_directory | The working directory for the docker image | `string` | `null` | no |
+| image\_uri | The ECR image URI containing the function's deployment package. | `string` | `null` | no |
 | kms\_key\_arn | The ARN of KMS key to use by your Lambda Function | `string` | `null` | no |
 | lambda\_at\_edge | Set this to true if using Lambda@Edge, to enable publishing, limit the timeout, and allow edgelambda.amazonaws.com to invoke the function | `bool` | `false` | no |
-| lambda\_role | IAM role attached to the Lambda Function. This governs both who / what can invoke your Lambda Function, as well as what resources our Lambda Function has access to. See Lambda Permission Model for more details. | `string` | `""` | no |
+| lambda\_role | IAM role ARN attached to the Lambda Function. This governs both who / what can invoke your Lambda Function, as well as what resources our Lambda Function has access to. See Lambda Permission Model for more details. | `string` | `""` | no |
 | layer\_name | Name of Lambda Layer to create | `string` | `""` | no |
 | layers | List of Lambda Layer Version ARNs (maximum of 5) to attach to your Lambda Function. | `list(string)` | `null` | no |
 | license\_info | License info for your Lambda Layer. Eg, MIT or full url of a license. | `string` | `""` | no |
 | local\_existing\_package | The absolute path to an existing zip-file to use | `string` | `null` | no |
 | maximum\_event\_age\_in\_seconds | Maximum age of a request that Lambda sends to a function for processing in seconds. Valid values between 60 and 21600. | `number` | `null` | no |
 | maximum\_retry\_attempts | Maximum number of times to retry when the function returns an error. Valid values between 0 and 2. Defaults to 2. | `number` | `null` | no |
-| memory\_size | Amount of memory in MB your Lambda Function can use at runtime. Valid value between 128 MB to 3008 MB, in 64 MB increments. | `number` | `128` | no |
+| memory\_size | Amount of memory in MB your Lambda Function can use at runtime. Valid value between 128 MB to 10,240 MB (10 GB), in 64 MB increments. | `number` | `128` | no |
 | number\_of\_policies | Number of policies to attach to IAM role for Lambda Function | `number` | `0` | no |
 | number\_of\_policy\_jsons | Number of policies JSON to attach to IAM role for Lambda Function | `number` | `0` | no |
+| package\_type | The Lambda deployment package type. Valid options: Zip or Image | `string` | `"Zip"` | no |
 | policies | List of policy statements ARN to attach to Lambda Function role | `list(string)` | `[]` | no |
 | policy | An additional policy document ARN to attach to the Lambda Function role | `string` | `null` | no |
 | policy\_json | An additional policy document as JSON to attach to the Lambda Function role | `string` | `null` | no |
@@ -669,6 +689,10 @@ Q4: What does this error mean - `"We currently do not support adding policies fo
 | lambda\_role\_name | The name of the IAM role created for the Lambda Function |
 | local\_filename | The filename of zip archive deployed (if deployment was from local) |
 | s3\_object | The map with S3 object data of zip archive deployed (if deployment was from S3) |
+| this\_lambda\_event\_source\_mapping\_function\_arn | The the ARN of the Lambda function the event source mapping is sending events to |
+| this\_lambda\_event\_source\_mapping\_state | The state of the event source mapping |
+| this\_lambda\_event\_source\_mapping\_state\_transition\_reason | The reason the event source mapping is in its current state |
+| this\_lambda\_event\_source\_mapping\_uuid | The UUID of the created event source mapping |
 | this\_lambda\_function\_arn | The ARN of the Lambda Function |
 | this\_lambda\_function\_invoke\_arn | The Invoke ARN of the Lambda Function |
 | this\_lambda\_function\_kms\_key\_arn | The ARN for the KMS encryption key of Lambda Function |
